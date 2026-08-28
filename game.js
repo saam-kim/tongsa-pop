@@ -587,7 +587,10 @@ function renderQrScreen() {
   $("qrTopicBadge").textContent = "📚 " + state.topicTitle;
   $("qrClassBadge").textContent = "🏫 " + state.className;
 
-  const baseUrl = (window.APP_CONFIG && window.APP_CONFIG.gameBaseUrl) || "";
+  const baseUrl = (window.APP_CONFIG && window.APP_CONFIG.gameBaseUrl) ||
+    (window.location && window.location.protocol && window.location.protocol.startsWith("http")
+      ? window.location.origin + window.location.pathname
+      : "");
   const warning = $("qrUrlWarning");
   const imgWrap = $("qrImageWrap");
   const img = $("qrImage");

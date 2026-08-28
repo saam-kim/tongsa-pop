@@ -10,36 +10,30 @@
 // ----------------------------------------------------------------
 // ⭐ 여기에 Firebase 콘솔 > 프로젝트 설정 > 내 앱(SDK 설정 및 구성)에서
 //    복사한 firebaseConfig 객체를 "통째로" 붙여넣으세요.
-//    (현재는 "change-my-class" 프로젝트 값이 채워져 있습니다. 다른 프로젝트를
-//     쓰려면 이 값을 새 프로젝트의 설정값으로 교체하세요.)
+//    (현재는 "tongsa-pop-2026" 프로젝트 전용 설정값이 채워져 있습니다.)
 //
 //    Firebase 콘솔 접속 → 프로젝트 선택 → 톱니바퀴(프로젝트 설정)
 //    → 내 앱 → SDK 설정 및 구성 → "구성" 선택 시 아래와 같은 형태의
 //    객체가 보입니다. 그 객체를 아래 firebaseConfig 자리에 그대로
 //    붙여넣으면 됩니다.
-//
-//    또한 Firestore Database를 "테스트 모드"로 생성해 두어야 합니다.
-//    (Firebase 콘솔 > Firestore Database > 데이터베이스 만들기 > 테스트 모드)
 // ----------------------------------------------------------------
 const firebaseConfig = {
-  apiKey: "AIzaSyDLLvMEhj6Yfm_K9LihePrdSs-6n6SaM8c",
-  authDomain: "change-my-class.firebaseapp.com",
-  databaseURL: "https://change-my-class-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "change-my-class",
-  storageBucket: "change-my-class.firebasestorage.app",
-  messagingSenderId: "143928594366",
-  appId: "1:143928594366:web:7de1bedb572cad23a1f3ef",
-  measurementId: "G-54Z92YL114",
+  apiKey: "AIzaSyBo-bB8kzKchbu3_doJ75W2pRK-JpRv9KM",
+  authDomain: "tongsa-pop-2026.firebaseapp.com",
+  projectId: "tongsa-pop-2026",
+  storageBucket: "tongsa-pop-2026.firebasestorage.app",
+  messagingSenderId: "474946107767",
+  appId: "1:474946107767:web:7ca2f3801470b919fac972",
 };
 
 // ----------------------------------------------------------------
 // 2) 학생이 접속할 index.html 전체 URL (QR 코드 생성용)
 // ----------------------------------------------------------------
-// 예) GitHub Pages에 올렸다면:
-//     "https://내아이디.github.io/저장소이름/index.html"
-// 비워두면("") QR 코드가 생성되지 않고 안내 문구가 표시됩니다.
+// 예) Vercel에 배포된 경우:
+//     "https://tongsa-pop.vercel.app/index.html"
+// 비워두면("") 현재 접속 중인 URL을 자동으로 감지하여 QR 코드를 생성합니다.
 // ----------------------------------------------------------------
-const gameBaseUrl = "https://saam-kim.github.io/tongsa-pop/index.html";
+const gameBaseUrl = "https://tongsa-pop.vercel.app/index.html";
 
 // ----------------------------------------------------------------
 // 3) 반 목록 (교사가 원하는 대로 자유롭게 수정하세요)

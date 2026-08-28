@@ -1,0 +1,408 @@
+{
+  "version": 1,
+  "rounds": [
+    {
+      "n": 1,
+      "at": "2026-08-28T10:22:19.487Z",
+      "security": {
+        "score": 57,
+        "grade": "F",
+        "eligible": false,
+        "blocking": [
+          "sec.header.csp",
+          "legal.privacy-policy"
+        ]
+      },
+      "protection": {
+        "states": {
+          "rights": "unresolved",
+          "boundary": "public_asset",
+          "release": "not_hardened",
+          "notice": "not_configured"
+        },
+        "eligible": false,
+        "unmet": [
+          "protection.boundary.client-secrets",
+          "protection.boundary.prompt",
+          "protection.verify.functional",
+          "protection.rights.owner-status",
+          "protection.rights.third-party",
+          "protection.rights.license-consistency"
+        ]
+      }
+    },
+    {
+      "n": 2,
+      "at": "2026-08-28T10:23:54.359Z",
+      "security": {
+        "score": 46,
+        "grade": "F",
+        "eligible": false,
+        "blocking": [
+          "sec.header.csp",
+          "legal.privacy-policy"
+        ]
+      }
+    },
+    {
+      "n": 3,
+      "at": "2026-08-28T10:24:52.626Z",
+      "security": {
+        "score": 88,
+        "grade": "B+",
+        "eligible": true,
+        "blocking": []
+      }
+    }
+  ],
+  "items": {
+    "sec.header.csp": {
+      "status": "fail",
+      "firstFailRound": 1,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "sec.header.hsts": {
+      "status": "fail",
+      "firstFailRound": 2,
+      "fixedRound": null,
+      "regressed": true
+    },
+    "sec.header.frame": {
+      "status": "fail",
+      "firstFailRound": 1,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "sec.header.nosniff": {
+      "status": "fail",
+      "firstFailRound": 1,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "sec.header.referrer": {
+      "status": "fail",
+      "firstFailRound": 1,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "sec.header.permissions": {
+      "status": "fail",
+      "firstFailRound": 1,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "sec.fingerprint.powered-by": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "sec.transport.https-redirect": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "sec.transport.ssl-valid": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "sec.transport.old-tls": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "sec.transport.cookie-flags": {
+      "status": "na",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "info.secret-exposed": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "info.config-exposed": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "info.source-map": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "info.stack-trace": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "info.mixed-content": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "cors.policy": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": 2,
+      "regressed": false
+    },
+    "seo.title": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "seo.description": {
+      "status": "fail",
+      "firstFailRound": 1,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "seo.viewport": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "seo.og": {
+      "status": "fail",
+      "firstFailRound": 1,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "seo.canonical": {
+      "status": "info",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "perf.ttfb": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "perf.page-size": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "perf.compression": {
+      "status": "info",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "legal.privacy-policy": {
+      "status": "fail",
+      "firstFailRound": 1,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "legal.terms": {
+      "status": "info",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "legal.contact": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "code.rls.anon-read": {
+      "status": "na",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "code.firebase.public-read": {
+      "status": "na",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "code.endpoint.unauth": {
+      "status": "na",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "code.hardcoded-secret": {
+      "status": "fail",
+      "firstFailRound": 1,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "code.client-secret-leak": {
+      "status": "pass",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "code.headers-config": {
+      "status": "info",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "code.dangerous-pattern": {
+      "status": "info",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.boundary.client-secrets": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.boundary.prompt": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.boundary.weights": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.release.sourcemap": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.release.debug": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.release.private-identifiers": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.release.separation": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.release.integrity": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.notice.visible": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.notice.machine-readable": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.evidence.manifest": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.evidence.timestamp": {
+      "status": "na",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.verify.functional": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.rights.owner-status": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.asset.inventory": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.rights.third-party": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.rights.ai-contribution": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.rights.license-consistency": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.boundary.server": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.boundary.output-leak": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.boundary.api-abuse": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    },
+    "protection.notice.app-footer": {
+      "status": "pending",
+      "firstFailRound": null,
+      "fixedRound": null,
+      "regressed": false
+    }
+  },
+  "passed": {
+    "security": true,
+    "edzip": false,
+    "protection": false
+  },
+  "submitted": {}
+}

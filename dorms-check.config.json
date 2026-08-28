@@ -1,0 +1,15 @@
+{
+  "app": {
+    "name": "통사POP",
+    "url": "https://tongsa-pop.vercel.app",
+    "stack": "정적 HTML"
+  },
+  "tracks": [
+    "security"
+  ],
+  "edzipCase": null,
+  "teacher": {
+    "dormsHandle": ""
+  },
+  "ownershipConfirmed": true
+}

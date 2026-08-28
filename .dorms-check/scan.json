@@ -1,0 +1,143 @@
+{
+  "at": "2026-08-28T10:24:52.630Z",
+  "url": "https://tongsa-pop.vercel.app",
+  "results": [
+    {
+      "id": "code.hardcoded-secret",
+      "status": "fail",
+      "observed": "하드코딩된 것으로 보이는 시크릿 1건",
+      "evidence": {
+        "hits": [
+          {
+            "file": "config.js",
+            "line": 21,
+            "kind": "Google API 키"
+          }
+        ]
+      }
+    },
+    {
+      "id": "code.client-secret-leak",
+      "status": "pass",
+      "observed": "클라 시크릿 노출 미검출",
+      "evidence": {
+        "hits": []
+      }
+    },
+    {
+      "id": "code.headers-config",
+      "status": "info",
+      "observed": "헤더 설정 발견: content-security-policy, strict-transport-security, x-frame-options, x-content-type-options, referrer-policy, permissions-policy",
+      "evidence": {
+        "configuredHeaders": {
+          "content-security-policy": [
+            "vercel.json"
+          ],
+          "strict-transport-security": [
+            "vercel.json"
+          ],
+          "x-frame-options": [
+            "vercel.json"
+          ],
+          "x-content-type-options": [
+            "vercel.json"
+          ],
+          "referrer-policy": [
+            "vercel.json"
+          ],
+          "permissions-policy": [
+            "vercel.json"
+          ]
+        },
+        "filesScanned": [
+          "vercel.json"
+        ]
+      }
+    },
+    {
+      "id": "code.dangerous-pattern",
+      "status": "info",
+      "observed": "검토가 필요한 위험 패턴 15건(문맥 확인 필요)",
+      "evidence": {
+        "hits": [
+          {
+            "file": "game.js",
+            "line": 380,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 407,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 420,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 525,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 532,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 552,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 654,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 664,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 829,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 846,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 1032,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 1040,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 1044,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 1061,
+            "kind": "innerHTML 대입"
+          },
+          {
+            "file": "game.js",
+            "line": 1105,
+            "kind": "innerHTML 대입"
+          }
+        ]
+      }
+    }
+  ],
+  "raw": {}
+}

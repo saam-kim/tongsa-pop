@@ -447,7 +447,7 @@ const state = {
   playerId: null,
   nickname: null,
 
-  round: null, // { categories, cards, selectedCategory, remainingCount, totalCount, wrongCount }
+  round: null, // { categories, cards, selectedCategory, remainingCount, totalCount, wrongCount, wrongAttempts }
   inputLocked: false,
   gameFinished: false,
 
@@ -1021,6 +1021,7 @@ function buildRound(topic) {
     remainingCount: cards.length,
     totalCount: cards.length,
     wrongCount: 0,
+    wrongAttempts: [],
   };
 }
 
@@ -1141,6 +1142,12 @@ function handleCorrect(card, el, selectedCategory) {
 
 function handleWrong(card, el, selectedCategory) {
   state.round.wrongCount += 1;
+  if (!Array.isArray(state.round.wrongAttempts)) state.round.wrongAttempts = [];
+  state.round.wrongAttempts.push({
+    cardText: card.text,
+    selectedCategory,
+    correctCategory: card.categoryName,
+  });
   el.classList.add("shaking");
   showFeedback("wrong", `오답! 선택한 유형은 "${selectedCategory}"인데, 이 풍선은 "${card.categoryName}"예요. (+3초)`);
   updateStatChips();
@@ -1240,6 +1247,7 @@ async function showResultScreen(resultData) {
   $("resultPenalty").textContent = "+" + formatMs(resultData.penaltyMs);
   $("resultFinalTime").textContent = formatMs(resultData.finalMs);
 
+  renderWrongReview();
   renderConceptAccordion();
   showScreen("result");
   await renderRanking(resultData);
@@ -1277,7 +1285,9 @@ async function renderRanking(currentResult) {
 
 function renderConceptAccordion() {
   const wrap = $("conceptAccordion");
-  wrap.innerHTML = state.round.categories
+  const topic = getTopicById(state.topicId);
+  const categories = topic ? topic.categories : [];
+  wrap.innerHTML = categories
     .map(
       (cat, idx) => `<div class="accordion-item" data-idx="${idx}">
         <button type="button" class="accordion-head">
@@ -1285,7 +1295,7 @@ function renderConceptAccordion() {
         </button>
         <div class="accordion-body">
           <ul class="accordion-body-inner">
-            ${cat.cardTexts.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}
+            ${cat.cards.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}
           </ul>
         </div>
       </div>`
@@ -1338,6 +1348,30 @@ async function init() {
   applyVisualPrefs();
   renderBgBalloons();
   await detectMode();
+}
+
+function renderWrongReview() {
+  const block = $("wrongReviewBlock");
+  const list = $("wrongReviewList");
+  const attempts = state.round && Array.isArray(state.round.wrongAttempts) ? state.round.wrongAttempts : [];
+  const unique = [];
+  const seen = new Set();
+  attempts.forEach((item) => {
+    const key = `${item.cardText}__${item.selectedCategory}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(item);
+    }
+  });
+  block.hidden = unique.length === 0;
+  list.innerHTML = unique
+    .map(
+      (item) => `<li class="wrong-review-item">
+        <p class="wrong-review-text">${escapeHtml(item.cardText)}</p>
+        <p class="wrong-review-answer">선택: ${escapeHtml(item.selectedCategory)} <span>→</span> 정답: <b>${escapeHtml(item.correctCategory)}</b></p>
+      </li>`
+    )
+    .join("");
 }
 
 init();

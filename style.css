@@ -407,6 +407,18 @@ input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px va
 .ranking-time { font-weight: 800; font-family: 'Outfit', 'Noto Sans KR', sans-serif; }
 .ranking-empty { text-align: center; color: var(--text-muted); font-size: 13px; padding: 14px 0; }
 
+.wrong-review-block {
+  display: flex; flex-direction: column; gap: 8px; padding: 14px;
+  border: 1px solid #fbbf24; border-radius: 14px; background: #fffbeb;
+}
+.wrong-review-block h3 { font-size: 15px; font-weight: 800; color: #92400e; }
+.wrong-review-note { font-size: 12.5px; line-height: 1.55; color: #92400e; }
+.wrong-review-list { display: flex; flex-direction: column; gap: 8px; }
+.wrong-review-item { padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.78); }
+.wrong-review-text { font-size: 13px; line-height: 1.55; color: var(--text-main); }
+.wrong-review-answer { margin-top: 5px; font-size: 12px; color: #92400e; }
+.wrong-review-answer span { padding: 0 3px; font-weight: 800; }
+
 .accordion { display: flex; flex-direction: column; gap: 8px; }
 .accordion-item { border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; background: var(--bg-secondary); }
 .accordion-head {

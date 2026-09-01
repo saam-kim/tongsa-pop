@@ -2,13 +2,14 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>통사POP</title>
 <meta name="description" content="통합사회 개념을 이해하고 풍선을 터뜨리며 학습하는 웹앱, 통사POP" />
 <meta property="og:title" content="통사POP" />
 <meta property="og:description" content="개념을 이해하고, 풍선을 정확히 터뜨려보세요!" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://tongsa-pop.vercel.app" />
+<meta name="theme-color" content="#2563eb" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -49,6 +50,7 @@
         <div id="classList" class="class-list"></div>
       </div>
 
+      <p id="connectionStatus" class="connection-status" role="status">수업 연결을 준비하고 있어요…</p>
       <button id="btnGenerateQr" class="btn btn-primary btn-large" type="button" disabled>QR 코드 생성하기</button>
     </div>
 
@@ -59,7 +61,7 @@
         <span id="studentClassBadge" class="badge badge-class"></span>
       </div>
 
-      <p id="studentInvalidMsg" class="invalid-msg" hidden>⚠ 세션 정보가 올바르지 않습니다. 선생님께 QR코드를 다시 요청하세요.</p>
+      <p id="studentInvalidMsg" class="invalid-msg" hidden>⚠ 세션 정보가 올바르지 않거나 이미 종료되었습니다. 선생님께 QR코드를 다시 요청하세요.</p>
 
       <div id="studentJoinBlock">
         <span class="field-label">내 닉네임</span>
@@ -106,7 +108,9 @@
 
       <div class="qr-actions">
         <button id="btnGoLive" class="btn btn-primary" type="button">📊 실시간 현황판 보기</button>
+        <button id="btnCopyLink" class="btn btn-secondary" type="button">🔗 링크 복사</button>
         <button id="btnQrBack" class="btn btn-ghost" type="button">← 뒤로가기</button>
+        <button id="btnCloseSession" class="btn btn-ghost" type="button">수업 종료</button>
       </div>
     </div>
   </section>
@@ -121,6 +125,12 @@
         </div>
         <h2 class="section-heading">📊 실시간 참여 현황판</h2>
       </header>
+
+      <div class="live-summary" aria-label="수업 참여 요약">
+        <span>참여 <b id="liveJoinedCount">0</b>명</span>
+        <span>플레이 중 <b id="livePlayingCount">0</b>명</span>
+        <span>완료 <b id="liveFinishedCount">0</b>명</span>
+      </div>
 
       <div id="livePlayerTableWrap" class="live-table-wrap">
         <table class="live-table">
@@ -189,7 +199,7 @@
       <div class="result-actions">
         <button id="btnRetry" class="btn btn-primary" type="button">다시 하기</button>
         <button id="btnBackToTopics" class="btn btn-secondary" type="button">처음 화면으로</button>
-        <button id="btnResetRanking" class="btn btn-ghost" type="button">랭킹 초기화</button>
+        <button id="btnResetRanking" class="btn btn-ghost" type="button">내 기기 기록 지우기</button>
       </div>
     </div>
   </section>
@@ -218,7 +228,7 @@
         <li>모든 풍선을 터뜨리면 클리어 시간 + 오답 페널티로 최종 기록이 계산됩니다.</li>
       </ol>
 
-      <p class="guide-note">✅ Firebase는 이미 연동되어 있습니다. 교사·학생 화면은 실시간으로 자동 동기화됩니다.</p>
+      <p class="guide-note">✅ QR을 새로 만들 때마다 별도의 수업 세션이 열립니다. 수업이 끝나면 QR 화면의 ‘수업 종료’를 눌러 새 참여를 막아주세요.</p>
     </div>
   </div>
 
@@ -265,6 +275,7 @@
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
 <script src="data.js"></script>

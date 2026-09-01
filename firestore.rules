@@ -1,17 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+
     match /sessions/{sessionId} {
-      allow read, write: if true;
+      // 세션 목록은 공개하지 않습니다. QR 주소를 받은 수업 참여자만 해당 세션을 읽습니다.
+      allow create: if signedIn()
+        && request.resource.data.teacherUid == request.auth.uid
+        && request.resource.data.status == "active";
+      allow get: if signedIn();
+      allow list: if false;
+      allow update: if signedIn()
+        && resource.data.teacherUid == request.auth.uid
+        && request.resource.data.teacherUid == resource.data.teacherUid
+        && request.resource.data.topicId == resource.data.topicId
+        && request.resource.data.className == resource.data.className;
+      allow delete: if false;
 
       match /players/{playerId} {
-        allow read, write: if true;
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && get(/databases/$(database)/documents/sessions/$(sessionId)).data.status == "active"
+          && request.resource.data.ownerUid == request.auth.uid;
+        allow update: if signedIn()
+          && resource.data.ownerUid == request.auth.uid
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && get(/databases/$(database)/documents/sessions/$(sessionId)).data.status == "active";
+        allow delete: if false;
       }
-    }
 
-    match /results/{resultId} {
-      allow read, create: if true;
-      allow update, delete: if false;
+      match /results/{resultId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && get(/databases/$(database)/documents/sessions/$(sessionId)).data.status == "active"
+          && request.resource.data.ownerUid == request.auth.uid
+          && get(/databases/$(database)/documents/sessions/$(sessionId)/players/$(request.resource.data.playerId)).data.ownerUid == request.auth.uid;
+        allow update, delete: if false;
+      }
     }
   }
 }

@@ -1,14 +1,4 @@
 {
-  "indexes": [
-    {
-      "collectionGroup": "results",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "topicId", "order": "ASCENDING" },
-        { "fieldPath": "className", "order": "ASCENDING" },
-        { "fieldPath": "finalMs", "order": "ASCENDING" }
-      ]
-    }
-  ],
+  "indexes": [],
   "fieldOverrides": []
 }

@@ -7,12 +7,15 @@
    0. Firebase 초기화
 ================================================================ */
 let db = null;
+let auth = null;
 let firebaseEnabled = false;
+let authReadyPromise = null;
 try {
   const cfg = (window.APP_CONFIG && window.APP_CONFIG.firebaseConfig) || {};
   if (cfg.apiKey && cfg.apiKey !== "PASTE_YOUR_FIREBASE_CONFIG_HERE") {
     firebase.initializeApp(cfg);
     db = firebase.firestore();
+    auth = firebase.auth();
     firebaseEnabled = true;
   } else {
     console.warn("[통사POP] firebaseConfig가 설정되지 않아 실시간 연동 없이 동작합니다.");
@@ -20,6 +23,30 @@ try {
 } catch (e) {
   console.error("[통사POP] Firebase 초기화 실패", e);
   firebaseEnabled = false;
+}
+
+async function ensureAuth() {
+  if (!firebaseEnabled || !auth) return false;
+  if (auth.currentUser) return true;
+  if (authReadyPromise) return authReadyPromise;
+  authReadyPromise = auth.signInAnonymously()
+    .then(() => true)
+    .catch((error) => {
+      console.error("[통사POP] 익명 로그인 실패", error);
+      return false;
+    });
+  return authReadyPromise;
+}
+
+function authUid() {
+  return auth && auth.currentUser ? auth.currentUser.uid : null;
+}
+
+function setConnectionStatus(type, message) {
+  const el = $("connectionStatus");
+  if (!el) return;
+  el.className = "connection-status" + (type ? " " + type : "");
+  el.textContent = message;
 }
 
 /* ================================================================
@@ -213,27 +240,30 @@ function saveVisualPrefs(prefs) {
    5. Firestore 연동 (실패해도 게임 진행에는 영향 없음)
 ================================================================ */
 async function fsCreateSession(topicId, topicTitle, className) {
-  const sessionId = `${topicId}_${className}_${Date.now()}`;
-  if (firebaseEnabled) {
-    try {
-      await db.collection("sessions").doc(sessionId).set({
-        topicId,
-        topicTitle,
-        className,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      console.error("[Firestore] 세션 생성 실패", e);
-    }
+  if (!(await ensureAuth())) return null;
+  const sessionId = generateId();
+  try {
+    await db.collection("sessions").doc(sessionId).set({
+      topicId,
+      topicTitle,
+      className,
+      teacherUid: authUid(),
+      status: "active",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    return sessionId;
+  } catch (e) {
+    console.error("[Firestore] 세션 생성 실패", e);
+    return null;
   }
-  return sessionId;
 }
 
 async function fsCreatePlayer(sessionId, playerId, nickname, totalCount) {
-  if (!firebaseEnabled) return;
+  if (!(await ensureAuth())) return false;
   try {
     await db.collection("sessions").doc(sessionId).collection("players").doc(playerId).set({
       nickname,
+      ownerUid: authUid(),
       status: "playing",
       totalCount,
       remainingCount: totalCount,
@@ -244,13 +274,40 @@ async function fsCreatePlayer(sessionId, playerId, nickname, totalCount) {
       joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+    return true;
   } catch (e) {
     console.error("[Firestore] 플레이어 생성 실패", e);
+    return false;
+  }
+}
+
+async function fsGetSession(sessionId) {
+  if (!(await ensureAuth())) return null;
+  try {
+    const snap = await db.collection("sessions").doc(sessionId).get();
+    return snap.exists ? snap.data() : null;
+  } catch (e) {
+    console.error("[Firestore] 세션 확인 실패", e);
+    return null;
+  }
+}
+
+async function fsCloseSession(sessionId) {
+  if (!(await ensureAuth())) return false;
+  try {
+    await db.collection("sessions").doc(sessionId).update({
+      status: "closed",
+      closedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    return true;
+  } catch (e) {
+    console.error("[Firestore] 세션 종료 실패", e);
+    return false;
   }
 }
 
 async function fsUpdateProgress(sessionId, playerId, remainingCount, wrongCount) {
-  if (!firebaseEnabled) return;
+  if (!(await ensureAuth())) return;
   try {
     await db.collection("sessions").doc(sessionId).collection("players").doc(playerId).update({
       remainingCount,
@@ -263,7 +320,7 @@ async function fsUpdateProgress(sessionId, playerId, remainingCount, wrongCount)
 }
 
 async function fsFinishPlayer(sessionId, playerId, data) {
-  if (!firebaseEnabled) return;
+  if (!(await ensureAuth())) return;
   try {
     await db.collection("sessions").doc(sessionId).collection("players").doc(playerId).update({
       status: "finished",
@@ -274,7 +331,9 @@ async function fsFinishPlayer(sessionId, playerId, data) {
       remainingCount: 0,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
-    await db.collection("results").add({
+    await db.collection("sessions").doc(sessionId).collection("results").add({
+      playerId,
+      ownerUid: authUid(),
       nickname: data.nickname,
       className: data.className,
       topicId: data.topicId,
@@ -293,7 +352,7 @@ async function fsFinishPlayer(sessionId, playerId, data) {
 let liveUnsubscribe = null;
 function fsSubscribeLive(sessionId) {
   fsUnsubscribeLive();
-  if (!firebaseEnabled) return;
+  if (!firebaseEnabled || !authUid()) return;
   try {
     liveUnsubscribe = db
       .collection("sessions")
@@ -319,12 +378,10 @@ function fsUnsubscribeLive() {
 }
 
 async function fetchRanking(topicId, className) {
-  if (firebaseEnabled) {
+  if (await ensureAuth()) {
     try {
       const snap = await db
-        .collection("results")
-        .where("topicId", "==", topicId)
-        .where("className", "==", className)
+        .collection("sessions").doc(state.sessionId).collection("results")
         .orderBy("finalMs", "asc")
         .limit(10)
         .get();
@@ -334,7 +391,7 @@ async function fetchRanking(topicId, className) {
     }
   }
   const local = getLocalResults()
-    .filter((r) => r.topicId === topicId && r.className === className)
+    .filter((r) => r.sessionId === state.sessionId)
     .sort((a, b) => a.finalMs - b.finalMs)
     .slice(0, 10);
   return { source: "local", items: local };
@@ -562,7 +619,7 @@ function renderClasses() {
 }
 
 function updateGenerateBtn() {
-  $("btnGenerateQr").disabled = !(dataValidation.valid && state.selectedTopicId && state.selectedClass);
+  $("btnGenerateQr").disabled = !(dataValidation.valid && state.selectedTopicId && state.selectedClass && authUid());
 }
 
 $("btnGenerateQr").addEventListener("click", async () => {
@@ -571,6 +628,11 @@ $("btnGenerateQr").addEventListener("click", async () => {
   if (!topic) return;
   $("btnGenerateQr").disabled = true;
   const sessionId = await fsCreateSession(topic.id, topic.title, state.selectedClass);
+  if (!sessionId) {
+    setConnectionStatus("error", "수업 연결에 실패했어요. 인터넷과 Firebase 설정을 확인하세요.");
+    updateGenerateBtn();
+    return;
+  }
   state.topicId = topic.id;
   state.topicTitle = topic.title;
   state.className = state.selectedClass;
@@ -630,6 +692,29 @@ function renderQrScreen() {
 $("btnQrBack").addEventListener("click", () => {
   showScreen("start");
 });
+$("btnCopyLink").addEventListener("click", async () => {
+  const url = $("qrUrlText").value;
+  if (!url) return;
+  try {
+    await navigator.clipboard.writeText(url);
+    showFeedback("correct", "학생용 링크를 복사했어요.");
+  } catch (e) {
+    $("qrUrlText").focus();
+    $("qrUrlText").select();
+    showFeedback("notice", "링크를 선택했어요. 복사해 주세요.");
+  }
+});
+$("btnCloseSession").addEventListener("click", () => {
+  showConfirm("이 수업을 종료할까요? 종료 후에는 학생이 새로 참여하거나 기록을 저장할 수 없습니다.", async () => {
+    if (await fsCloseSession(state.sessionId)) {
+      showFeedback("correct", "수업을 종료했어요. 새 수업은 처음 화면에서 QR을 다시 만들어 시작하세요.");
+      $("btnCloseSession").disabled = true;
+      $("btnGoLive").disabled = true;
+    } else {
+      showFeedback("wrong", "수업 종료에 실패했어요. 교사가 만든 기기에서 다시 시도하세요.");
+    }
+  });
+});
 $("btnGoLive").addEventListener("click", () => {
   fsSubscribeLive(state.sessionId);
   renderLivePlayers([]);
@@ -651,6 +736,9 @@ function renderLivePlayers(players) {
   const emptyMsg = $("liveEmptyMsg");
 
   if (!players || players.length === 0) {
+    $("liveJoinedCount").textContent = "0";
+    $("livePlayingCount").textContent = "0";
+    $("liveFinishedCount").textContent = "0";
     tbody.innerHTML = "";
     emptyMsg.hidden = false;
     return;
@@ -660,6 +748,9 @@ function renderLivePlayers(players) {
   const finished = players.filter((p) => p.status === "finished").sort((a, b) => (a.finalMs || 0) - (b.finalMs || 0));
   const playing = players.filter((p) => p.status !== "finished").sort((a, b) => (a.nickname || "").localeCompare(b.nickname || ""));
   const ordered = finished.concat(playing);
+  $("liveJoinedCount").textContent = players.length;
+  $("livePlayingCount").textContent = playing.length;
+  $("liveFinishedCount").textContent = finished.length;
 
   tbody.innerHTML = ordered
     .map((p) => {
@@ -717,7 +808,7 @@ async function assignRandomNickname(sessionId) {
 /* ================================================================
    13. 학생 모드 진입
 ================================================================ */
-function detectMode() {
+async function detectMode() {
   const params = new URLSearchParams(window.location.search);
   const topic = params.get("topic");
   const cls = params.get("class");
@@ -745,6 +836,13 @@ function detectMode() {
     $("studentTopicBadge").textContent = "📚 " + topicObj.title;
     $("studentClassBadge").textContent = "🏫 " + cls;
 
+    const sessionData = await fsGetSession(session);
+    if (!sessionData || sessionData.status !== "active" || sessionData.topicId !== topic || sessionData.className !== cls) {
+      $("studentJoinBlock").hidden = true;
+      $("studentInvalidMsg").hidden = false;
+      return;
+    }
+
     assignRandomNickname(session).then((nickname) => {
       state.nickname = nickname;
       $("assignedNicknameText").textContent = nickname;
@@ -757,6 +855,12 @@ function detectMode() {
     renderDataErrors();
     renderTopics();
     renderClasses();
+    setConnectionStatus("", "수업 연결을 준비하고 있어요…");
+    if (await ensureAuth()) {
+      setConnectionStatus("ready", "실시간 수업 연결이 준비되었습니다.");
+    } else {
+      setConnectionStatus("error", "실시간 연결을 준비하지 못했어요. Firebase 익명 로그인을 확인하세요.");
+    }
     updateGenerateBtn();
   }
 }
@@ -769,7 +873,10 @@ $("btnStartGame").addEventListener("click", async () => {
   const topic = getTopicById(state.topicId);
   state.round = buildRound(topic);
 
-  await fsCreatePlayer(state.sessionId, state.playerId, state.nickname, state.round.totalCount);
+  if (!(await fsCreatePlayer(state.sessionId, state.playerId, state.nickname, state.round.totalCount))) {
+    showFeedback("wrong", "수업 연결에 실패했어요. QR을 다시 스캔하거나 선생님께 알려주세요.");
+    return;
+  }
 
   renderGameHeader();
   renderCategoryBar();
@@ -989,13 +1096,14 @@ $("btnRestart").addEventListener("click", () => {
 /* ================================================================
    20. 결과 처리
 ================================================================ */
-function finishGame() {
+async function finishGame() {
   stopTimer();
   const clearMs = state.timer.elapsedMs;
   const penaltyMs = state.round.wrongCount * 3000;
   const finalMs = clearMs + penaltyMs;
 
   const resultData = {
+    sessionId: state.sessionId,
     nickname: state.nickname,
     className: state.className,
     topicId: state.topicId,
@@ -1008,8 +1116,8 @@ function finishGame() {
   };
 
   saveLocalResult(resultData);
-  fsFinishPlayer(state.sessionId, state.playerId, resultData);
-  showResultScreen(resultData);
+  await fsFinishPlayer(state.sessionId, state.playerId, resultData);
+  await showResultScreen(resultData);
 }
 
 async function showResultScreen(resultData) {
@@ -1115,10 +1223,10 @@ $("btnResetRanking").addEventListener("click", () => {
 /* ================================================================
    22. 초기화
 ================================================================ */
-function init() {
+async function init() {
   applyVisualPrefs();
   renderBgBalloons();
-  detectMode();
+  await detectMode();
 }
 
 init();

@@ -193,7 +193,31 @@ function validateGameSets(gameSets) {
 const LS_KEYS = {
   results: "tongsaBoom_localResults",
   visualPrefs: "tongsaBoom_visualPrefs",
+  teacherSession: "tongsaBoom_teacherSession",
+  studentProgress: "tongsaBoom_studentProgress",
 };
+
+function readStored(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch (e) {
+    return null;
+  }
+}
+function writeStored(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.error("로컬 저장 실패", e);
+  }
+}
+function removeStored(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (e) {
+    console.error("로컬 저장 삭제 실패", e);
+  }
+}
 
 function getLocalResults() {
   try {
@@ -278,6 +302,17 @@ async function fsCreatePlayer(sessionId, playerId, nickname, totalCount) {
   } catch (e) {
     console.error("[Firestore] 플레이어 생성 실패", e);
     return false;
+  }
+}
+
+async function fsGetPlayer(sessionId, playerId) {
+  if (!(await ensureAuth())) return null;
+  try {
+    const snap = await db.collection("sessions").doc(sessionId).collection("players").doc(playerId).get();
+    return snap.exists ? snap.data() : null;
+  } catch (e) {
+    console.error("[Firestore] 플레이어 확인 실패", e);
+    return null;
   }
 }
 
@@ -414,10 +449,38 @@ const state = {
 
   round: null, // { categories, cards, selectedCategory, remainingCount, totalCount, wrongCount }
   inputLocked: false,
+  gameFinished: false,
 
   timer: { startTime: null, intervalId: null, elapsedMs: 0 },
   visualPrefs: getVisualPrefs(),
 };
+
+function saveTeacherSession() {
+  writeStored(LS_KEYS.teacherSession, {
+    sessionId: state.sessionId,
+    topicId: state.topicId,
+    topicTitle: state.topicTitle,
+    className: state.className,
+  });
+}
+
+function saveStudentProgress() {
+  if (state.gameFinished || !state.playerId || !state.round) return;
+  const elapsedMs = state.timer.startTime ? Date.now() - state.timer.startTime : state.timer.elapsedMs;
+  writeStored(LS_KEYS.studentProgress, {
+    sessionId: state.sessionId,
+    topicId: state.topicId,
+    className: state.className,
+    playerId: state.playerId,
+    nickname: state.nickname,
+    round: state.round,
+    elapsedMs,
+  });
+}
+
+function clearStudentProgress() {
+  removeStored(LS_KEYS.studentProgress);
+}
 
 /* ================================================================
    7. 배경 장식 풍선
@@ -637,6 +700,7 @@ $("btnGenerateQr").addEventListener("click", async () => {
   state.topicTitle = topic.title;
   state.className = state.selectedClass;
   state.sessionId = sessionId;
+  saveTeacherSession();
   renderQrScreen();
   showScreen("qr");
   updateGenerateBtn();
@@ -842,6 +906,26 @@ async function detectMode() {
       return;
     }
 
+    const saved = readStored(LS_KEYS.studentProgress);
+    if (saved && saved.sessionId === session && saved.topicId === topic && saved.className === cls && saved.playerId && saved.round) {
+      const player = await fsGetPlayer(session, saved.playerId);
+      if (player && player.ownerUid === authUid() && player.status === "playing") {
+        state.playerId = saved.playerId;
+        state.nickname = saved.nickname;
+        state.round = saved.round;
+        state.inputLocked = false;
+        renderGameHeader();
+        renderCategoryBar();
+        renderCardGrid();
+        updateStatChips();
+        startTimer(saved.elapsedMs || 0);
+        showScreen("game");
+        showFeedback("notice", "이전 진행 상황을 이어서 시작합니다.");
+        return;
+      }
+      clearStudentProgress();
+    }
+
     assignRandomNickname(session).then((nickname) => {
       state.nickname = nickname;
       $("assignedNicknameText").textContent = nickname;
@@ -857,6 +941,21 @@ async function detectMode() {
     setConnectionStatus("", "수업 연결을 준비하고 있어요…");
     if (await ensureAuth()) {
       setConnectionStatus("ready", "실시간 수업 연결이 준비되었습니다.");
+      const saved = readStored(LS_KEYS.teacherSession);
+      if (saved && saved.sessionId) {
+        const sessionData = await fsGetSession(saved.sessionId);
+        if (sessionData && sessionData.teacherUid === authUid()) {
+          state.topicId = sessionData.topicId;
+          state.topicTitle = sessionData.topicTitle;
+          state.className = sessionData.className;
+          state.sessionId = saved.sessionId;
+          renderQrScreen();
+          $("btnCloseSession").disabled = sessionData.status === "closed";
+          showScreen("qr");
+          return;
+        }
+        removeStored(LS_KEYS.teacherSession);
+      }
     } else {
       setConnectionStatus("error", "실시간 연결을 준비하지 못했어요. Firebase 익명 로그인을 확인하세요.");
     }
@@ -868,6 +967,7 @@ $("btnStartGame").addEventListener("click", async () => {
   if (!state.nickname) return; // 닉네임 배정이 아직 끝나지 않음 (버튼도 비활성화되어 있어 정상적으론 도달하지 않음)
 
   state.playerId = generateId();
+  state.gameFinished = false;
 
   const topic = getTopicById(state.topicId);
   state.round = buildRound(topic);
@@ -876,6 +976,8 @@ $("btnStartGame").addEventListener("click", async () => {
     showFeedback("wrong", "수업 연결에 실패했어요. QR을 다시 스캔하거나 선생님께 알려주세요.");
     return;
   }
+
+  saveStudentProgress();
 
   renderGameHeader();
   renderCategoryBar();
@@ -1025,6 +1127,7 @@ function handleCorrect(card, el, selectedCategory) {
   updateStatChips();
   renderCategoryBar();
   fsUpdateProgress(state.sessionId, state.playerId, state.round.remainingCount, state.round.wrongCount);
+  saveStudentProgress();
 
   setTimeout(() => {
     // DOM에서 제거하지 않고 그대로 둔다 — 터진 풍선 자리는 빈 공간으로 남고
@@ -1042,6 +1145,7 @@ function handleWrong(card, el, selectedCategory) {
   showFeedback("wrong", `오답! 선택한 유형은 "${selectedCategory}"인데, 이 풍선은 "${card.categoryName}"예요. (+3초)`);
   updateStatChips();
   fsUpdateProgress(state.sessionId, state.playerId, state.round.remainingCount, state.round.wrongCount);
+  saveStudentProgress();
 
   setTimeout(() => {
     el.classList.remove("shaking");
@@ -1052,11 +1156,11 @@ function handleWrong(card, el, selectedCategory) {
 /* ================================================================
    18. 타이머
 ================================================================ */
-function startTimer() {
+function startTimer(initialElapsedMs = 0) {
   stopTimer();
-  state.timer.startTime = Date.now();
-  state.timer.elapsedMs = 0;
-  $("statTimer").textContent = "0.0";
+  state.timer.startTime = Date.now() - initialElapsedMs;
+  state.timer.elapsedMs = initialElapsedMs;
+  $("statTimer").textContent = formatSeconds(initialElapsedMs);
   state.timer.intervalId = setInterval(() => {
     state.timer.elapsedMs = Date.now() - state.timer.startTime;
     $("statTimer").textContent = formatSeconds(state.timer.elapsedMs);
@@ -1079,11 +1183,13 @@ async function startNewRound() {
   const topic = getTopicById(state.topicId);
   state.round = buildRound(topic);
   state.inputLocked = false;
+  state.gameFinished = false;
   renderCategoryBar();
   renderCardGrid();
   updateStatChips();
   startTimer();
   await fsCreatePlayer(state.sessionId, state.playerId, state.nickname, state.round.totalCount);
+  saveStudentProgress();
 }
 
 $("btnRestart").addEventListener("click", () => {
@@ -1116,8 +1222,14 @@ async function finishGame() {
 
   saveLocalResult(resultData);
   await fsFinishPlayer(state.sessionId, state.playerId, resultData);
+  state.gameFinished = true;
+  clearStudentProgress();
   await showResultScreen(resultData);
 }
+
+window.addEventListener("pagehide", () => {
+  if (state.mode === "student" && state.round && state.playerId) saveStudentProgress();
+});
 
 async function showResultScreen(resultData) {
   $("resultNickname").textContent = resultData.nickname;

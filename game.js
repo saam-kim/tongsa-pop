@@ -707,9 +707,8 @@ $("btnCopyLink").addEventListener("click", async () => {
 $("btnCloseSession").addEventListener("click", () => {
   showConfirm("이 수업을 종료할까요? 종료 후에는 학생이 새로 참여하거나 기록을 저장할 수 없습니다.", async () => {
     if (await fsCloseSession(state.sessionId)) {
-      showFeedback("correct", "수업을 종료했어요. 새 수업은 처음 화면에서 QR을 다시 만들어 시작하세요.");
+      showFeedback("correct", "수업을 종료했어요. 새 참여는 막혔고, 최종 현황판은 계속 볼 수 있어요.");
       $("btnCloseSession").disabled = true;
-      $("btnGoLive").disabled = true;
     } else {
       showFeedback("wrong", "수업 종료에 실패했어요. 교사가 만든 기기에서 다시 시도하세요.");
     }
@@ -889,8 +888,8 @@ $("btnStartGame").addEventListener("click", async () => {
 /* ================================================================
    14. 라운드 구성
 ================================================================ */
-// 한 판에 뿌릴 풍선(카드) 총 개수 기본값. 3개씩 3줄 배치를 기준으로 9개.
-const TOTAL_BALLOON_COUNT = 9;
+// 한 판에 뿌릴 풍선(카드) 총 개수. 유형별 비교와 반복 학습을 위해 15개를 사용한다.
+const TOTAL_BALLOON_COUNT = 15;
 
 function buildRound(topic) {
   const n = topic.categories.length;

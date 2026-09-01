@@ -123,13 +123,15 @@
           <span id="liveTopicBadge" class="badge badge-topic"></span>
           <span id="liveClassBadge" class="badge badge-class"></span>
         </div>
-        <h2 class="section-heading">📊 실시간 참여 현황판</h2>
+        <h2 id="liveHeading" class="section-heading">📊 실시간 참여 현황판</h2>
       </header>
 
       <div class="live-summary" aria-label="수업 참여 요약">
         <span>참여 <b id="liveJoinedCount">0</b>명</span>
         <span>플레이 중 <b id="livePlayingCount">0</b>명</span>
         <span>완료 <b id="liveFinishedCount">0</b>명</span>
+        <span>완료율 <b id="liveCompletionRate">0%</b></span>
+        <span>완료자 평균 오답 <b id="liveAverageWrong">-</b></span>
       </div>
 
       <div id="livePlayerTableWrap" class="live-table-wrap">

@@ -444,6 +444,7 @@ const state = {
   topicTitle: null,
   className: null,
   sessionId: null,
+  sessionStatus: null,
   playerId: null,
   nickname: null,
 
@@ -700,6 +701,7 @@ $("btnGenerateQr").addEventListener("click", async () => {
   state.topicTitle = topic.title;
   state.className = state.selectedClass;
   state.sessionId = sessionId;
+  state.sessionStatus = "active";
   saveTeacherSession();
   renderQrScreen();
   showScreen("qr");
@@ -771,6 +773,7 @@ $("btnCopyLink").addEventListener("click", async () => {
 $("btnCloseSession").addEventListener("click", () => {
   showConfirm("이 수업을 종료할까요? 종료 후에는 학생이 새로 참여하거나 기록을 저장할 수 없습니다.", async () => {
     if (await fsCloseSession(state.sessionId)) {
+      state.sessionStatus = "closed";
       showFeedback("correct", "수업을 종료했어요. 새 참여는 막혔고, 최종 현황판은 계속 볼 수 있어요.");
       $("btnCloseSession").disabled = true;
     } else {
@@ -794,6 +797,7 @@ $("btnLiveBack").addEventListener("click", () => {
 function renderLivePlayers(players) {
   $("liveTopicBadge").textContent = "📚 " + state.topicTitle;
   $("liveClassBadge").textContent = "🏫 " + state.className;
+  $("liveHeading").textContent = state.sessionStatus === "closed" ? "📊 수업 최종 현황판" : "📊 실시간 참여 현황판";
 
   const tbody = $("livePlayerTbody");
   const emptyMsg = $("liveEmptyMsg");
@@ -802,6 +806,8 @@ function renderLivePlayers(players) {
     $("liveJoinedCount").textContent = "0";
     $("livePlayingCount").textContent = "0";
     $("liveFinishedCount").textContent = "0";
+    $("liveCompletionRate").textContent = "0%";
+    $("liveAverageWrong").textContent = "-";
     tbody.innerHTML = "";
     emptyMsg.hidden = false;
     return;
@@ -814,6 +820,11 @@ function renderLivePlayers(players) {
   $("liveJoinedCount").textContent = players.length;
   $("livePlayingCount").textContent = playing.length;
   $("liveFinishedCount").textContent = finished.length;
+  $("liveCompletionRate").textContent = `${Math.round((finished.length / players.length) * 100)}%`;
+  const averageWrong = finished.length
+    ? (finished.reduce((sum, p) => sum + (p.wrongCount || 0), 0) / finished.length).toFixed(1)
+    : null;
+  $("liveAverageWrong").textContent = averageWrong === null ? "-" : `${averageWrong}회`;
 
   tbody.innerHTML = ordered
     .map((p) => {
@@ -949,6 +960,7 @@ async function detectMode() {
           state.topicTitle = sessionData.topicTitle;
           state.className = sessionData.className;
           state.sessionId = saved.sessionId;
+          state.sessionStatus = sessionData.status;
           renderQrScreen();
           $("btnCloseSession").disabled = sessionData.status === "closed";
           showScreen("qr");

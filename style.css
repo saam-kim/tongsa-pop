@@ -315,7 +315,7 @@ input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px va
 /* ---------- 13. 카드 그리드 & 풍선 카드 ---------- */
 .card-grid {
   max-width: 980px; margin: 0 auto; display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 150px), 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px 14px; padding: 10px 4px 40px;
 }
 #app[data-card-size="small"] .card-grid { --card-min: 118px; }
@@ -493,13 +493,10 @@ input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px va
 @media (max-width: 640px) {
   .screen { padding: 20px 14px 50px; }
   .result-stats { grid-template-columns: 1fr 1fr; }
-  .card-grid { grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-min, 150px) * 0.82), 1fr)); gap: 14px 10px; }
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; }
   .brand-title { font-size: 26px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
-}
-@media (min-width: 641px) and (max-width: 1024px) {
-  .card-grid { grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 150px), 1fr)); }
 }

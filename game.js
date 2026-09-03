@@ -439,15 +439,14 @@ async function fetchRanking(topicId, className) {
 const state = {
   mode: null, // 'teacher' | 'student'
   selectedTopicId: null,
-  selectedClass: null,
-  selectedBalloonCount: 15,
+  selectedBalloonCount: 12,
 
   topicId: null,
   topicTitle: null,
   className: null,
   sessionId: null,
   sessionStatus: null,
-  balloonCount: 15,
+  balloonCount: 12,
   playerId: null,
   nickname: null,
 
@@ -671,30 +670,16 @@ function renderTopics() {
   });
 }
 
-function renderClasses() {
-  const wrap = $("classList");
-  const classes = (window.APP_CONFIG && window.APP_CONFIG.classes) || [];
-  wrap.innerHTML = classes
-    .map((c) => `<button type="button" class="class-chip${state.selectedClass === c ? " selected" : ""}" data-class="${escapeHtml(c)}">${escapeHtml(c)}</button>`)
-    .join("");
-  wrap.querySelectorAll(".class-chip").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.selectedClass = btn.dataset.class;
-      renderClasses();
-      updateGenerateBtn();
-    });
-  });
-}
-
 function updateGenerateBtn() {
-  $("btnGenerateQr").disabled = !(dataValidation.valid && state.selectedTopicId && state.selectedClass && authUid());
+  $("btnGenerateQr").disabled = !(dataValidation.valid && state.selectedTopicId && authUid());
 }
 
-const BALLOON_COUNT_OPTIONS = [12, 15, 18];
+const BALLOON_COUNT_OPTIONS = [8, 12, 16];
 function renderBalloonCountOptions() {
   const wrap = $("balloonCountList");
   wrap.innerHTML = BALLOON_COUNT_OPTIONS.map((count) => {
-    const label = count === 15 ? `${count}개 (권장)` : `${count}개`;
+    const rows = count / 4;
+    const label = count === 12 ? `${count}개 · ${rows}줄 (권장)` : `${count}개 · ${rows}줄`;
     return `<button type="button" class="class-chip${state.selectedBalloonCount === count ? " selected" : ""}" data-balloon-count="${count}">${label}</button>`;
   }).join("");
   wrap.querySelectorAll(".class-chip").forEach((btn) => {
@@ -710,7 +695,7 @@ $("btnGenerateQr").addEventListener("click", async () => {
   const topic = getTopicById(state.selectedTopicId);
   if (!topic) return;
   $("btnGenerateQr").disabled = true;
-  const sessionId = await fsCreateSession(topic.id, topic.title, state.selectedClass, state.selectedBalloonCount);
+  const sessionId = await fsCreateSession(topic.id, topic.title, "전체", state.selectedBalloonCount);
   if (!sessionId) {
     setConnectionStatus("error", "수업 연결에 실패했어요. 인터넷과 Firebase 설정을 확인하세요.");
     updateGenerateBtn();
@@ -718,7 +703,7 @@ $("btnGenerateQr").addEventListener("click", async () => {
   }
   state.topicId = topic.id;
   state.topicTitle = topic.title;
-  state.className = state.selectedClass;
+  state.className = "전체";
   state.sessionId = sessionId;
   state.sessionStatus = "active";
   state.balloonCount = state.selectedBalloonCount;
@@ -733,7 +718,6 @@ $("btnGenerateQr").addEventListener("click", async () => {
 ================================================================ */
 function renderQrScreen() {
   $("qrTopicBadge").textContent = "📚 " + state.topicTitle;
-  $("qrClassBadge").textContent = "🏫 " + state.className;
 
   const baseUrl = (window.APP_CONFIG && window.APP_CONFIG.gameBaseUrl) ||
     (window.location && window.location.protocol && window.location.protocol.startsWith("http")
@@ -758,7 +742,7 @@ function renderQrScreen() {
   fallback.hidden = true;
   img.hidden = false;
 
-  const studentUrl = `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}topic=${encodeURIComponent(state.topicId)}&class=${encodeURIComponent(state.className)}&session=${encodeURIComponent(state.sessionId)}`;
+  const studentUrl = `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}topic=${encodeURIComponent(state.topicId)}&session=${encodeURIComponent(state.sessionId)}`;
 
   img.onerror = () => {
     img.hidden = true;
@@ -816,7 +800,6 @@ $("btnLiveBack").addEventListener("click", () => {
 ================================================================ */
 function renderLivePlayers(players) {
   $("liveTopicBadge").textContent = "📚 " + state.topicTitle;
-  $("liveClassBadge").textContent = "🏫 " + state.className;
   $("liveHeading").textContent = state.sessionStatus === "closed" ? "📊 수업 최종 현황판" : "📊 실시간 참여 현황판";
 
   const tbody = $("livePlayerTbody");
@@ -905,10 +888,9 @@ async function assignRandomNickname(sessionId) {
 async function detectMode() {
   const params = new URLSearchParams(window.location.search);
   const topic = params.get("topic");
-  const cls = params.get("class");
   const session = params.get("session");
 
-  if (topic && cls && session) {
+  if (topic && session) {
     const topicObj = getTopicById(topic);
     if (!topicObj) {
       state.mode = "student";
@@ -921,25 +903,24 @@ async function detectMode() {
     state.mode = "student";
     state.topicId = topic;
     state.topicTitle = topicObj.title;
-    state.className = cls;
+    state.className = "전체";
     state.sessionId = session;
 
     $("teacherPanel").hidden = true;
     $("studentPanel").hidden = false;
     $("studentInvalidMsg").hidden = true;
     $("studentTopicBadge").textContent = "📚 " + topicObj.title;
-    $("studentClassBadge").textContent = "🏫 " + cls;
 
     const sessionData = await fsGetSession(session);
-    if (!sessionData || sessionData.status !== "active" || sessionData.topicId !== topic || sessionData.className !== cls) {
+    if (!sessionData || sessionData.status !== "active" || sessionData.topicId !== topic) {
       $("studentJoinBlock").hidden = true;
       $("studentInvalidMsg").hidden = false;
       return;
     }
-    state.balloonCount = sessionData.balloonCount || 15;
+    state.balloonCount = sessionData.balloonCount || 12;
 
     const saved = readStored(LS_KEYS.studentProgress);
-    if (saved && saved.sessionId === session && saved.topicId === topic && saved.className === cls && saved.playerId && saved.round) {
+    if (saved && saved.sessionId === session && saved.topicId === topic && saved.playerId && saved.round) {
       const player = await fsGetPlayer(session, saved.playerId);
       if (player && player.ownerUid === authUid() && player.status === "playing") {
         state.playerId = saved.playerId;
@@ -969,7 +950,6 @@ async function detectMode() {
     $("studentPanel").hidden = true;
     renderDataErrors();
     renderTopics();
-    renderClasses();
     renderBalloonCountOptions();
     setConnectionStatus("", "수업 연결을 준비하고 있어요…");
     if (await ensureAuth()) {
@@ -983,7 +963,7 @@ async function detectMode() {
           state.className = sessionData.className;
           state.sessionId = saved.sessionId;
           state.sessionStatus = sessionData.status;
-          state.balloonCount = sessionData.balloonCount || 15;
+          state.balloonCount = sessionData.balloonCount || 12;
           renderQrScreen();
           $("btnCloseSession").disabled = sessionData.status === "closed";
           showScreen("qr");
@@ -1025,10 +1005,10 @@ $("btnStartGame").addEventListener("click", async () => {
 /* ================================================================
    14. 라운드 구성
 ================================================================ */
-// 한 판에 뿌릴 풍선(카드) 총 개수. 유형별 비교와 반복 학습을 위해 15개를 사용한다.
-const TOTAL_BALLOON_COUNT = 15;
+// 한 판에 뿌릴 풍선(카드) 총 개수 기본값. 한 줄 4개씩 3줄인 12개를 사용한다.
+const TOTAL_BALLOON_COUNT = 12;
 
-function buildRound(topic, balloonCount = 15) {
+function buildRound(topic, balloonCount = 12) {
   const n = topic.categories.length;
   const safeBalloonCount = BALLOON_COUNT_OPTIONS.includes(balloonCount) ? balloonCount : TOTAL_BALLOON_COUNT;
   const base = Math.floor(safeBalloonCount / n);
@@ -1066,7 +1046,6 @@ function buildRound(topic, balloonCount = 15) {
 ================================================================ */
 function renderGameHeader() {
   $("gameTopicTitle").textContent = state.topicTitle;
-  $("gameClassBadge").textContent = "🏫 " + state.className;
 }
 
 function renderCategoryBar() {
@@ -1277,7 +1256,6 @@ window.addEventListener("pagehide", () => {
 async function showResultScreen(resultData) {
   $("resultNickname").textContent = resultData.nickname;
   $("resultTopic").textContent = resultData.topicTitle;
-  $("resultClass").textContent = resultData.className;
   $("resultClearTime").textContent = formatMs(resultData.clearMs);
   $("resultWrongCount").textContent = resultData.wrongCount + "회";
   $("resultPenalty").textContent = "+" + formatMs(resultData.penaltyMs);

@@ -46,14 +46,9 @@
       </div>
 
       <div class="panel-block">
-        <h2 class="panel-title">반 선택</h2>
-        <div id="classList" class="class-list"></div>
-      </div>
-
-      <div class="panel-block">
         <h2 class="panel-title">한 판 풍선 수</h2>
         <div id="balloonCountList" class="class-list" aria-label="한 판 풍선 수 선택"></div>
-        <p class="field-hint">기본 15개를 권장해요. 풍선이 많을수록 비교할 문장이 늘어납니다.</p>
+        <p class="field-hint">한 줄에 4개씩 배치됩니다. 기본은 12개(3줄)예요.</p>
       </div>
 
       <p id="connectionStatus" class="connection-status" role="status">수업 연결을 준비하고 있어요…</p>
@@ -64,7 +59,6 @@
     <div id="studentPanel" class="panel student-panel" hidden>
       <div class="student-badges">
         <span id="studentTopicBadge" class="badge badge-topic"></span>
-        <span id="studentClassBadge" class="badge badge-class"></span>
       </div>
 
       <p id="studentInvalidMsg" class="invalid-msg" hidden>⚠ 세션 정보가 올바르지 않거나 이미 종료되었습니다. 선생님께 QR코드를 다시 요청하세요.</p>
@@ -74,7 +68,7 @@
         <div id="assignedNicknameBox" class="assigned-nickname-box">
           <span id="assignedNicknameText" class="assigned-nickname-text">뽑는 중...</span>
         </div>
-        <p class="field-hint">실명 대신 닉네임이 자동으로 배정돼요. 같은 반 안에서는 겹치지 않아요.</p>
+        <p class="field-hint">실명 대신 닉네임이 자동으로 배정돼요. 같은 수업 안에서는 겹치지 않아요.</p>
         <button id="btnStartGame" class="btn btn-primary btn-large" type="button" disabled>게임 시작</button>
 
         <div class="rules-box">
@@ -96,7 +90,6 @@
     <div class="glass-card qr-card">
       <div class="student-badges">
         <span id="qrTopicBadge" class="badge badge-topic"></span>
-        <span id="qrClassBadge" class="badge badge-class"></span>
       </div>
       <h2 class="section-heading">학생들에게 QR코드를 보여주세요</h2>
 
@@ -127,7 +120,6 @@
       <header class="live-header">
         <div class="student-badges">
           <span id="liveTopicBadge" class="badge badge-topic"></span>
-          <span id="liveClassBadge" class="badge badge-class"></span>
         </div>
         <h2 id="liveHeading" class="section-heading">📊 실시간 참여 현황판</h2>
       </header>
@@ -160,7 +152,6 @@
       <div class="game-header-top">
         <div class="game-title-wrap">
           <span id="gameTopicTitle" class="game-topic-title"></span>
-          <span id="gameClassBadge" class="badge badge-class"></span>
         </div>
         <button id="btnRestart" class="btn btn-ghost btn-small" type="button">🔄 재시작</button>
       </div>
@@ -186,7 +177,6 @@
       <div class="result-stats">
         <div class="result-stat"><span class="result-stat-label">닉네임</span><span id="resultNickname" class="result-stat-value"></span></div>
         <div class="result-stat"><span class="result-stat-label">주제</span><span id="resultTopic" class="result-stat-value"></span></div>
-        <div class="result-stat"><span class="result-stat-label">반</span><span id="resultClass" class="result-stat-value"></span></div>
         <div class="result-stat"><span class="result-stat-label">클리어 시간</span><span id="resultClearTime" class="result-stat-value"></span></div>
         <div class="result-stat"><span class="result-stat-label">오답 횟수</span><span id="resultWrongCount" class="result-stat-value"></span></div>
         <div class="result-stat"><span class="result-stat-label">오답 페널티</span><span id="resultPenalty" class="result-stat-value"></span></div>
@@ -226,7 +216,7 @@
 
       <h3>수업 진행 순서</h3>
       <ol class="guide-list">
-        <li>교사 화면에서 <b>학습 주제</b>와 <b>반</b>을 선택합니다.</li>
+        <li>교사 화면에서 <b>학습 주제</b>와 <b>한 판 풍선 수</b>를 선택합니다.</li>
         <li><b>QR 코드 생성하기</b>를 눌러 QR 화면을 프로젝터/TV에 띄웁니다.</li>
         <li>학생들이 태블릿으로 QR을 스캔하면 <b>닉네임이 자동으로 배정</b>되고, 게임을 시작합니다.</li>
         <li>QR 화면에서 <b>실시간 현황판</b>으로 이동해 학생들의 참여·진행 상황을 확인합니다.</li>

@@ -263,7 +263,7 @@ function saveVisualPrefs(prefs) {
 /* ================================================================
    5. Firestore 연동 (실패해도 게임 진행에는 영향 없음)
 ================================================================ */
-async function fsCreateSession(topicId, topicTitle, className, balloonCount) {
+async function fsCreateSession(topicId, topicTitle, className) {
   if (!(await ensureAuth())) return null;
   const sessionId = generateId();
   try {
@@ -271,7 +271,7 @@ async function fsCreateSession(topicId, topicTitle, className, balloonCount) {
       topicId,
       topicTitle,
       className,
-      balloonCount,
+      balloonCount: TOTAL_BALLOON_COUNT,
       teacherUid: authUid(),
       status: "active",
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -439,14 +439,12 @@ async function fetchRanking(topicId, className) {
 const state = {
   mode: null, // 'teacher' | 'student'
   selectedTopicId: null,
-  selectedBalloonCount: 12,
 
   topicId: null,
   topicTitle: null,
   className: null,
   sessionId: null,
   sessionStatus: null,
-  balloonCount: 12,
   playerId: null,
   nickname: null,
 
@@ -464,7 +462,6 @@ function saveTeacherSession() {
     topicId: state.topicId,
     topicTitle: state.topicTitle,
     className: state.className,
-    balloonCount: state.balloonCount,
   });
 }
 
@@ -674,28 +671,12 @@ function updateGenerateBtn() {
   $("btnGenerateQr").disabled = !(dataValidation.valid && state.selectedTopicId && authUid());
 }
 
-const BALLOON_COUNT_OPTIONS = [8, 12, 16];
-function renderBalloonCountOptions() {
-  const wrap = $("balloonCountList");
-  wrap.innerHTML = BALLOON_COUNT_OPTIONS.map((count) => {
-    const rows = count / 4;
-    const label = count === 12 ? `${count}개 · ${rows}줄 (권장)` : `${count}개 · ${rows}줄`;
-    return `<button type="button" class="class-chip${state.selectedBalloonCount === count ? " selected" : ""}" data-balloon-count="${count}">${label}</button>`;
-  }).join("");
-  wrap.querySelectorAll(".class-chip").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.selectedBalloonCount = Number(btn.dataset.balloonCount);
-      renderBalloonCountOptions();
-    });
-  });
-}
-
 $("btnGenerateQr").addEventListener("click", async () => {
   if ($("btnGenerateQr").disabled) return;
   const topic = getTopicById(state.selectedTopicId);
   if (!topic) return;
   $("btnGenerateQr").disabled = true;
-  const sessionId = await fsCreateSession(topic.id, topic.title, "전체", state.selectedBalloonCount);
+  const sessionId = await fsCreateSession(topic.id, topic.title, "전체");
   if (!sessionId) {
     setConnectionStatus("error", "수업 연결에 실패했어요. 인터넷과 Firebase 설정을 확인하세요.");
     updateGenerateBtn();
@@ -706,7 +687,6 @@ $("btnGenerateQr").addEventListener("click", async () => {
   state.className = "전체";
   state.sessionId = sessionId;
   state.sessionStatus = "active";
-  state.balloonCount = state.selectedBalloonCount;
   saveTeacherSession();
   renderQrScreen();
   showScreen("qr");
@@ -917,7 +897,6 @@ async function detectMode() {
       $("studentInvalidMsg").hidden = false;
       return;
     }
-    state.balloonCount = sessionData.balloonCount || 12;
 
     const saved = readStored(LS_KEYS.studentProgress);
     if (saved && saved.sessionId === session && saved.topicId === topic && saved.playerId && saved.round) {
@@ -950,7 +929,6 @@ async function detectMode() {
     $("studentPanel").hidden = true;
     renderDataErrors();
     renderTopics();
-    renderBalloonCountOptions();
     setConnectionStatus("", "수업 연결을 준비하고 있어요…");
     if (await ensureAuth()) {
       setConnectionStatus("ready", "실시간 수업 연결이 준비되었습니다.");
@@ -963,7 +941,6 @@ async function detectMode() {
           state.className = sessionData.className;
           state.sessionId = saved.sessionId;
           state.sessionStatus = sessionData.status;
-          state.balloonCount = sessionData.balloonCount || 12;
           renderQrScreen();
           $("btnCloseSession").disabled = sessionData.status === "closed";
           showScreen("qr");
@@ -985,7 +962,7 @@ $("btnStartGame").addEventListener("click", async () => {
   state.gameFinished = false;
 
   const topic = getTopicById(state.topicId);
-  state.round = buildRound(topic, state.balloonCount);
+  state.round = buildRound(topic);
 
   if (!(await fsCreatePlayer(state.sessionId, state.playerId, state.nickname, state.round.totalCount))) {
     showFeedback("wrong", "수업 연결에 실패했어요. QR을 다시 스캔하거나 선생님께 알려주세요.");
@@ -1005,14 +982,13 @@ $("btnStartGame").addEventListener("click", async () => {
 /* ================================================================
    14. 라운드 구성
 ================================================================ */
-// 한 판에 뿌릴 풍선(카드) 총 개수 기본값. 한 줄 4개씩 3줄인 12개를 사용한다.
-const TOTAL_BALLOON_COUNT = 12;
+// 한 판에 뿌릴 풍선(카드) 총 개수. 모든 수업에서 10개로 고정한다.
+const TOTAL_BALLOON_COUNT = 10;
 
-function buildRound(topic, balloonCount = 12) {
+function buildRound(topic) {
   const n = topic.categories.length;
-  const safeBalloonCount = BALLOON_COUNT_OPTIONS.includes(balloonCount) ? balloonCount : TOTAL_BALLOON_COUNT;
-  const base = Math.floor(safeBalloonCount / n);
-  const remainder = safeBalloonCount % n;
+  const base = Math.floor(TOTAL_BALLOON_COUNT / n);
+  const remainder = TOTAL_BALLOON_COUNT % n;
   // 나머지는 매 판 무작위로 다른 유형에 배분해, 특정 유형이 항상 더 많이 나오지 않도록 한다.
   const extraIdx = new Set(shuffleInPlace(topic.categories.map((_, i) => i)).slice(0, remainder));
 
@@ -1203,7 +1179,7 @@ function stopTimer() {
 ================================================================ */
 async function startNewRound() {
   const topic = getTopicById(state.topicId);
-  state.round = buildRound(topic, state.balloonCount);
+  state.round = buildRound(topic);
   state.inputLocked = false;
   state.gameFinished = false;
   renderCategoryBar();
